@@ -17,6 +17,11 @@ python setup_gcn.py install
 
 # Usage
 
+## For GridWorld Implementation
+
+```python main.py --env_dim 5 5 --gcn_epochs 100 --gcn_lambda 10 --gcn_alpha 0.6 --episodes 2000```
+
+
 ## Atari
 
 To launch a run on one of the Atari games, use the following command:
