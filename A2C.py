@@ -18,9 +18,10 @@ class Environment:
     self.reward_matrix[:, goal[0], goal[1]] = 0
     # self.reward_matrix[:, start[0], start[1]] = 0
     
-    
-    self.blocks = [(1,0), (1,1), (1,2), (1,3), (3,1), (3,2), (3,3), (3,4)]
-    # self.createBlocks()
+
+    # self.blocks = [(1,0)  , (1,1), (1,2), (1,3), (3,1), (3,2), (3,3), (3,4)]
+    self.blocks = [(2,2)]
+    self.createBlocks()
 
     self.dim = size[0]
     self.adjacency_matrix = np.zeros((self.dim ** 2, self.dim ** 2))
@@ -31,7 +32,7 @@ class Environment:
 
     self.build_laplacian()
 
-    self.qweights = np.zeros((1,100))
+    self.qweights = np.zeros((1, 4 * self.dim * self.dim))
     self.qvalues = lambda s,a: (self.qweights.dot(self.get_features(s,a).T))[0][0]
 
 
@@ -85,19 +86,21 @@ class Environment:
 
     s_no = s[0] * self.dim + s[1]
     feature = self.eigvecs[s_no]
-    arr = np.zeros((100))
+    arr = np.zeros((4 * self.dim * self.dim))
+
+    k = self.dim * self.dim
 
     if a == 0:
-      arr[:25] = feature
+      arr[:k] = feature
 
     if a == 1:
-      arr[25:50] = feature
+      arr[k:2*k] = feature
 
     if a == 2:
-      arr[50:75] = feature
+      arr[2*k:3*k] = feature
 
     if a == 3:
-      arr[75:] = feature
+      arr[3*k: 4*k] = feature
 
     return np.array([arr])
 
@@ -167,7 +170,7 @@ class ActorCritic:
 
     self.errors = {(i,j,k): list() for i in range(self.grid.size[0]) for j in range(self.grid.size[1]) for k in range(len(self.agent.actions))}
 
-    self.parameter = np.random.uniform(0,1,(1,100))
+    self.parameter = np.random.uniform(0,1,(1,4 * self.grid.dim * self.grid.dim))
 
   def main(self, num_of_ep, qc):
 
@@ -222,7 +225,7 @@ class ActorCritic:
         
   def score_fn(self, state, action):
           
-      avg = np.zeros((1,100))    
+      avg = np.zeros((1,4 * self.grid.dim * self.grid.dim))    
       
       probs = self.policy_model(state)
       
@@ -278,3 +281,4 @@ class ActorCritic:
         world[s] = np.argmax(self.find_qvalues(s))
 
     print(world)
+
