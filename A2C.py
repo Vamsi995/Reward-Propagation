@@ -6,131 +6,142 @@ import scipy.linalg as la
 
 class Environment:
 
-    def __init__(self, start, goal, size):
+  def __init__(self, start, goal, size):  
 
-        self.start = start
-        self.goal = goal
-        self.size = size
+    self.start = start
+    self.goal = goal
+    self.size = size
 
-        self.env = np.zeros(size)
-        self.reward_matrix = np.full((4, size[0], size[1]), 0)
-        self.reward_matrix[:, goal[0], goal[1]] = 0
-        # self.reward_matrix[:, start[0], start[1]] = 0
 
-        self.blocks = [(1, 0), (1, 1), (1, 2), (1, 3), (3, 1), (3, 2), (3, 3), (3, 4)]
-        # self.createBlocks()
+    self.env = np.zeros(size)
+    self.reward_matrix = np.full((4,size[0],size[1]),-1)
+    self.reward_matrix[:, goal[0], goal[1]] = 0
+    # self.reward_matrix[:, start[0], start[1]] = 0
+    
+    
+    self.blocks = [(1,0), (1,1), (1,2), (1,3), (3,1), (3,2), (3,3), (3,4)]
+    # self.createBlocks()
 
-        self.dim = size[0]
-        self.adjacency_matrix = np.zeros((self.dim ** 2, self.dim ** 2))
-        self.degree_matrix = np.zeros((self.dim ** 2, self.dim ** 2))
+    self.dim = size[0]
+    self.adjacency_matrix = np.zeros((self.dim ** 2, self.dim ** 2))
+    self.degree_matrix = np.zeros((self.dim ** 2, self.dim ** 2))
 
-        self.laplacian = 0
-        self.eigvecs = []
+    self.laplacian = 0
+    self.eigvecs = []
 
-        self.build_laplacian()
+    self.build_laplacian()
 
-        self.qweights = np.zeros((1, 100))
-        self.qvalues = lambda s, a: (self.qweights.dot(self.get_features(s, a).T))[0][0]
+    self.qweights = np.zeros((1,100))
+    self.qvalues = lambda s,a: (self.qweights.dot(self.get_features(s,a).T))[0][0]
 
-    def find_neighbours(self, s):
 
-        n = self.dim
-        val = []
+  def find_neighbours(self, s):
 
-        if s[1] - 1 >= 0:
-            s1 = (s[0], s[1] - 1)
-            val.append(s1[0] * n + s1[1])
+    n = self.dim
+    val = []
 
-        if s[1] + 1 <= 4:
-            s1 = (s[0], s[1] + 1)
-            val.append(s1[0] * n + s1[1])
+    if s[1] - 1 >= 0:
+      s1 = (s[0], s[1] - 1)
+      val.append(s1[0] * n + s1[1])
 
-        if s[0] - 1 >= 0:
-            s1 = (s[0] - 1, s[1])
-            val.append(s1[0] * n + s1[1])
+    if s[1] + 1 <= 4:
+      s1 = (s[0], s[1] + 1)
+      val.append(s1[0] * n + s1[1])
+    
+    if s[0] - 1 >= 0:
+      s1 = (s[0] - 1, s[1])
+      val.append(s1[0] * n + s1[1])
 
-        if s[0] + 1 <= 4:
-            s1 = (s[0] + 1, s[1])
-            val.append(s1[0] * n + s1[1])
+    if s[0] + 1 <= 4:
+      s1 = (s[0] + 1, s[1])
+      val.append(s1[0] * n + s1[1])
+    
+    return val
 
-        return val
 
-    def build_laplacian(self):
+  def build_laplacian(self):
 
-        for i in range(self.dim):
-            for j in range(self.dim):
+    for i in range(self.dim):
+      for j in range(self.dim):
 
-                s_no = i * self.dim + j
-                s = (i, j)
+        s_no = i * self.dim + j
+        s = (i,j)
 
-                for k in self.find_neighbours(s):
-                    self.adjacency_matrix[s_no, k] = 1
+        for k in self.find_neighbours(s):
+          self.adjacency_matrix[s_no, k] = 1
 
-        degree_arr = sum(self.adjacency_matrix)
 
-        for i in range(self.dim ** 2):
-            self.degree_matrix[i, i] = degree_arr[i]
 
-        self.laplacian = self.degree_matrix - self.adjacency_matrix
-        eigvals, self.eigvecs = la.eig(self.laplacian)
+    degree_arr = sum(self.adjacency_matrix)
 
-    def get_features(self, s, a):
+    for i in range(self.dim ** 2):
+      self.degree_matrix[i,i] = degree_arr[i]
 
-        s_no = s[0] * self.dim + s[1]
-        feature = self.eigvecs[s_no]
-        arr = np.zeros((100))
+    self.laplacian = self.degree_matrix - self.adjacency_matrix
+    eigvals, self.eigvecs = la.eig(self.laplacian)
 
-        if a == 0:
-            arr[:25] = feature
 
-        if a == 1:
-            arr[25:50] = feature
+  def get_features(self, s, a):
 
-        if a == 2:
-            arr[50:75] = feature
+    s_no = s[0] * self.dim + s[1]
+    feature = self.eigvecs[s_no]
+    arr = np.zeros((100))
 
-        if a == 3:
-            arr[75:] = feature
+    if a == 0:
+      arr[:25] = feature
 
-        return np.array([arr])
+    if a == 1:
+      arr[25:50] = feature
 
-    def createBlocks(self):
+    if a == 2:
+      arr[50:75] = feature
 
-        for s in self.blocks:
-            self.reward_matrix[:, s[0], s[1]] = -100
+    if a == 3:
+      arr[75:] = feature
 
-    def nextState(self, s, a):
+    return np.array([arr])
 
-        if a == 0:
 
-            if s[1] == 0:
-                return (s[0], s[1])
+  def createBlocks(self):
 
-            return (s[0], s[1] - 1)
+    for s in self.blocks:
 
-        elif a == 1:
+      self.reward_matrix[:,s[0],s[1]] = -100
 
-            if s[1] == self.size[1] - 1:
-                return (s[0], s[1])
 
-            return (s[0], s[1] + 1)
+  def nextState(self, s,a):
 
-        elif a == 2:
+    if a == 0:
 
-            if s[0] == 0:
-                return (s[0], s[1])
+      if s[1] == 0:
+        return (s[0],s[1])
 
-            return (s[0] - 1, s[1])
+      return (s[0], s[1] - 1)
 
-        elif a == 3:
+    elif a == 1:
 
-            if s[0] == self.size[0] - 1:
-                return (s[0], s[1])
+      if s[1] == self.size[1] - 1:
+        return (s[0], s[1])
 
-            return (s[0] + 1, s[1])
+      return (s[0], s[1] + 1)
 
-    def reward(self, s, a):
-        return self.reward_matrix[a, s[0], s[1]]
+    elif a == 2:
+
+      if s[0] == 0:
+        return (s[0], s[1])
+
+      return (s[0] - 1, s[1])
+
+    elif a == 3:
+
+      if s[0] == self.size[0] - 1:
+        return (s[0], s[1])
+
+      return (s[0] + 1, s[1])
+
+  
+  def reward(self, s,a):
+    return self.reward_matrix[a,s[0],s[1]]
 
 
 class Agent:
@@ -142,119 +153,128 @@ class Agent:
 
     self.state_policy = np.full((4, size[0], size[1]), 0.25)
 
-
 class ActorCritic:
 
-    def __init__(self, df, env, agent):
+  def __init__(self, df, env, agent):
 
-        self.df = df
+    self.df = df
+    
+    self.grid = env
+    self.agent = agent
 
-        self.grid = env
-        self.agent = agent
+    self.step_size_qvalue = 0.1
+    self.step_size_policy = 0.01
 
-        self.step_size_qvalue = 0.1
-        self.step_size_policy = 0.01
+    self.errors = {(i,j,k): list() for i in range(self.grid.size[0]) for j in range(self.grid.size[1]) for k in range(len(self.agent.actions))}
 
-        self.errors = {(i, j, k): list() for i in range(self.grid.size[0]) for j in range(self.grid.size[1]) for k in
-                       range(len(self.agent.actions))}
+    self.parameter = np.random.uniform(0,1,(1,100))
 
-        self.parameter = np.random.uniform(0, 1, (1, 100))
+  def main(self, num_of_ep, qc):
 
-    def main(self, num_of_ep, qc):
+    for iterations in range(num_of_ep):
 
-        for iterations in range(num_of_ep):
+      s = (np.random.randint(0, self.grid.size[0]), np.random.randint(0, self.grid.size[1]))
+      a = np.random.choice([0,1,2,3], p = self.policy_model(s))
+      
+      while True:
 
-            s = (np.random.randint(0, self.grid.size[0]), np.random.randint(0, self.grid.size[1]))
-            a = np.random.choice([0, 1, 2, 3], p=self.policy_model(s))
+        if s == self.grid.goal:
+          break
 
-            while True:
+        s1 = self.grid.nextState(s,a)
+        r = self.grid.reward(s,a)
+        a1 = np.random.choice([0,1,2,3], p = self.policy_model(s1))
 
-                if s == self.grid.goal:
-                    break
+        self.parameter += self.step_size_policy * qc[a, s[0], s[1]] * self.score_fn(s,a)
+        # self.parameter += self.step_size_policy * self.grid.qvalues(s,a) * self.score_fn(s,a)
 
-                s1 = self.grid.nextState(s, a)
-                r = self.grid.reward(s, a)
-                a1 = np.random.choice([0, 1, 2, 3], p=self.policy_model(s1))
+        td_error = r + self.df * qc[a1, s1[0], s1[1]] - qc[a, s[0], s[1]]
+        # td_error = r + self.df * self.grid.qvalues(s1,a1) - self.grid.qvalues(s,a)
 
-                # self.parameter += self.step_size_policy * self.grid.qvalues(s, a) * self.score_fn(s, a)
-                self.parameter += self.step_size_policy * qc[a, s[0], s[1]] * self.score_fn(s, a)
+        self.grid.qweights += self.step_size_qvalue * td_error * self.grid.get_features(s,a)
 
-                # td_error = r + self.df * self.grid.qvalues(s1, a1) - self.grid.qvalues(s, a)
-                td_error = r + self.df * qc[a1, s1[0], s1[1]] - qc[a, s[0], s[1]]
-                self.grid.qweights += self.step_size_qvalue * td_error * self.grid.get_features(s, a)
 
-                self.errors[s[0], s[1], a].append(td_error)
+        self.errors[s[0], s[1], a].append(td_error)
 
-                s = s1
-                a = a1
+        s = s1
+        a = a1
 
-            # print("episode no ", iterations)
-            # self.value_fn()
+      print("episode no ", iterations)
+      self.value_fn()
 
-    def policy_model(self, s):
+  def policy_model(self, s):
+        
+      vals = []
+      
+      for i in range(len(self.agent.actions)):
+          
+        vals.append(self.grid.get_features(s,i).dot(self.parameter.T)[0][0])
+          
+  
+      vals -= max(vals)
+      
+      n = np.exp(vals)
+      
+      vals = n/sum(n)
+     
+      return vals
+            
+        
+  def score_fn(self, state, action):
+          
+      avg = np.zeros((1,100))    
+      
+      probs = self.policy_model(state)
+      
+      for i in range(len(probs)):
+              
+              avg += self.grid.get_features(state,i) * probs[i]
+      
+      return self.grid.get_features(state,action) - avg
+       
+  def plot_error(self):
 
-        vals = []
+    all_state_errors = list(self.errors.values())
 
-        for i in range(len(self.agent.actions)):
-            vals.append(self.grid.get_features(s, i).dot(self.parameter.T)[0][0])
+    for error_perstate in all_state_errors:
+      plt.plot(error_perstate)
 
-        vals -= max(vals)
+  
+  def find_qvalues(self, s):
 
-        n = np.exp(vals)
+    vals = []
 
-        vals = n / sum(n)
+    for a in range(len(self.agent.actions)):
+      vals.append(self.grid.qvalues(s,a))
+    
+    return vals
 
-        return vals
 
-    def score_fn(self, state, action):
+  def value_fn(self):
 
-        avg = np.zeros((1, 100))
+    world = np.zeros((self.grid.size))
 
-        probs = self.policy_model(state)
+    for i in range(self.grid.size[0]):
 
-        for i in range(len(probs)):
-            avg += self.grid.get_features(state, i) * probs[i]
+      for j in range(self.grid.size[1]):
+    
+        s = (i,j)
 
-        return self.grid.get_features(state, action) - avg
+        world[s] = max(self.find_qvalues(s))
 
-    def plot_error(self):
+    print(world)
 
-        all_state_errors = list(self.errors.values())
 
-        for error_perstate in all_state_errors:
-            plt.plot(error_perstate)
+  def printPolicy(self):
 
-    def find_qvalues(self, s):
+    world = np.zeros((self.grid.size))
 
-        vals = []
+    for i in range(self.grid.size[0]):
 
-        for a in range(len(self.agent.actions)):
-            vals.append(self.grid.qvalues(s, a))
+      for j in range(self.grid.size[1]):
+    
+        s = (i,j)
 
-        return vals
+        world[s] = np.argmax(self.find_qvalues(s))
 
-    def value_fn(self):
-
-        world = np.zeros((self.grid.size))
-
-        for i in range(self.grid.size[0]):
-
-            for j in range(self.grid.size[1]):
-                s = (i, j)
-
-                world[s] = max(self.find_qvalues(s))
-
-        print(world)
-
-    def printPolicy(self):
-
-        world = np.zeros((self.grid.size))
-
-        for i in range(self.grid.size[0]):
-
-            for j in range(self.grid.size[1]):
-                s = (i, j)
-
-                world[s] = np.argmax(self.find_qvalues(s))
-
-        print(world)
+    print(world)
