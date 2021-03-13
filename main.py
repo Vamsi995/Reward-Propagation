@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import scipy.sparse as sp
 import scipy.linalg as la
 from pygcn.train import shortest_dist, update_graph
+from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--hidden', type=int, default=64,
@@ -101,8 +102,8 @@ def walk_train_gcn(env_dim, model, optimizer):
     adj = normalize(sp.csr_matrix(adj) + sp.eye(adj.shape[0]))
     adj = sparse_mx_to_torch_sparse_tensor(adj)
 
-    # for episodes in range(20):
-    update_graph(n, m, args, model, optimizer)
+    for episodes in range(40):
+      update_graph(n, m, args, model, optimizer)
     # print("{} episode done :".format(episodes + 1))
 
 
@@ -124,6 +125,10 @@ def main():
     ag = Agent(env.size)
     ac = ActorCritic(1, env, ag)
 
+    env_ac = Environment((0,0), (4,4), env_dim)
+    ag_ac = Agent(env_ac.size)
+    ac_t = ActorCritic(1, env_ac, ag_ac)
+
     num_ep = args.episodes
 
     # Define the GCN Model
@@ -135,27 +140,33 @@ def main():
     features, adj = walk_features(env_dim[0], env_dim[1])
 
 
-
+    walk_train_gcn(env_dim, model, optimizer)
+    output = model(features, adj).cpu()
+    gcn_phi = torch.exp(output).detach().numpy()
+    gcn_phi = gcn_phi[:, 1].reshape((env_dim))
 
     for i in range(num_ep):
-
-        walk_train_gcn(env_dim, model, optimizer)
-
-        output = model(features, adj).cpu()
-        gcn_phi = torch.exp(output).detach().numpy()
-        gcn_phi = gcn_phi[:, 1].reshape((env_dim))
+    
     # plt.imshow(gcn_phi, cmap='hot', interpolation='nearest')
     # sns.heatmap(gcn_phi, vmin=0, vmax=1)
     # plt.show()
 
-        qc = qcomb(gcn_phi, ac, env_dim)
+      qc = qcomb(gcn_phi, ac, env_dim)
 
-        ac.main(1, qc)
+      ac.main(1, qc)
 
-        print("Episode no.", i)
-        ac.printPolicy()
+      print("Episode no.", i)
+      ac.printPolicy()
 
-    ac.plot_error()
+
+    ac_t.main_ac(args.episodes)
+    # ac.plot_error()
+    plt.plot(ac.regfin, color='red')
+    plt.plot(ac_t.regfin, color='blue')
+    
+    plt.show()
+
+    
 
 if __name__ == "__main__":
     main()

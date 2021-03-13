@@ -20,8 +20,8 @@ class Environment:
     
 
     # self.blocks = [(1,0)  , (1,1), (1,2), (1,3), (3,1), (3,2), (3,3), (3,4)]
-    self.blocks = [(2,2)]
-    self.createBlocks()
+    self.blocks = [(4,4)]
+    # self.createBlocks()
 
     self.dim = size[0]
     self.adjacency_matrix = np.zeros((self.dim ** 2, self.dim ** 2))
@@ -171,12 +171,25 @@ class ActorCritic:
     self.errors = {(i,j,k): list() for i in range(self.grid.size[0]) for j in range(self.grid.size[1]) for k in range(len(self.agent.actions))}
 
     self.parameter = np.random.uniform(0,1,(1,4 * self.grid.dim * self.grid.dim))
+    
+    self.regret = [[-8, -7, -6, -5, -4],
+          [-7, -6, -5, -4, -3],
+          [-6, -5, -4, -3, -2],
+          [-5, -4, -3, -2, -1],
+          [-4, -3, -2, -1, 0]]
+    
+    self.regretError = []
+    self.regfin = []
 
   def main(self, num_of_ep, qc):
 
+
+
     for iterations in range(num_of_ep):
 
+      tot_rew = 0
       s = (np.random.randint(0, self.grid.size[0]), np.random.randint(0, self.grid.size[1]))
+      start_state = s
       a = np.random.choice([0,1,2,3], p = self.policy_model(s))
       
       while True:
@@ -186,6 +199,7 @@ class ActorCritic:
 
         s1 = self.grid.nextState(s,a)
         r = self.grid.reward(s,a)
+        tot_rew += r
         a1 = np.random.choice([0,1,2,3], p = self.policy_model(s1))
 
         self.parameter += self.step_size_policy * qc[a, s[0], s[1]] * self.score_fn(s,a)
@@ -204,6 +218,51 @@ class ActorCritic:
 
       print("episode no ", iterations)
       self.value_fn()
+
+      self.regretError.append(self.regret[start_state[0]][start_state[1]] - tot_rew)
+      self.regfin.append(sum(self.regretError))
+
+
+  def main_ac(self, num_of_ep):
+
+
+
+    for iterations in range(num_of_ep):
+      
+      tot_rew = 0
+      s = (np.random.randint(0, self.grid.size[0]), np.random.randint(0, self.grid.size[1]))
+      start_state = s
+      a = np.random.choice([0,1,2,3], p = self.policy_model(s))
+      
+      while True:
+
+        if s == self.grid.goal:
+          break
+
+        s1 = self.grid.nextState(s,a)
+        r = self.grid.reward(s,a)
+        tot_rew += r
+        a1 = np.random.choice([0,1,2,3], p = self.policy_model(s1))
+
+        # self.parameter += self.step_size_policy * qc[a, s[0], s[1]] * self.score_fn(s,a)
+        self.parameter += self.step_size_policy * self.grid.qvalues(s,a) * self.score_fn(s,a)
+
+        # td_error = r + self.df * qc[a1, s1[0], s1[1]] - qc[a, s[0], s[1]]
+        td_error = r + self.df * self.grid.qvalues(s1,a1) - self.grid.qvalues(s,a)
+
+        self.grid.qweights += self.step_size_qvalue * td_error * self.grid.get_features(s,a)
+
+
+        self.errors[s[0], s[1], a].append(td_error)
+
+        s = s1
+        a = a1
+
+      print("episode no ", iterations)
+      self.value_fn()
+
+      self.regretError.append(self.regret[start_state[0]][start_state[1]] - tot_rew)
+      self.regfin.append(sum(self.regretError))
 
   def policy_model(self, s):
         
