@@ -121,13 +121,13 @@ def qcomb(phi, ac, env_dim):
 def main():
 
     env_dim = tuple(args.env_dim)
-    env = Environment((0,0), (4,4), env_dim)
-    ag = Agent(env.size)
-    ac = ActorCritic(1, env, ag)
+    # env = Environment((0,0), (7,7), env_dim)
+    # ag = Agent(env.size)
+    # ac = ActorCritic(1, env, ag)
 
-    env_ac = Environment((0,0), (4,4), env_dim)
-    ag_ac = Agent(env_ac.size)
-    ac_t = ActorCritic(1, env_ac, ag_ac)
+    # env_ac = Environment((0,0), (7,7), env_dim)
+    # ag_ac = Agent(env_ac.size)
+    # ac_t = ActorCritic(1, env_ac, ag_ac)
 
     num_ep = args.episodes
 
@@ -145,26 +145,49 @@ def main():
     gcn_phi = torch.exp(output).detach().numpy()
     gcn_phi = gcn_phi[:, 1].reshape((env_dim))
 
-    for i in range(num_ep):
+
+
+    gcn_ac = np.zeros((args.episodes))
+    ac_og = np.zeros((args.episodes))
+
+    for j in range(10):
+      env = Environment((0,0), (4,4), env_dim)
+      ag = Agent(env.size)
+      ac = ActorCritic(1, env, ag)
+
+      env_ac = Environment((0,0), (4,4), env_dim)
+      ag_ac = Agent(env_ac.size)
+      ac_t = ActorCritic(1, env_ac, ag_ac)
+
+      for i in range(num_ep):
+      
+      # plt.imshow(gcn_phi, cmap='hot', interpolation='nearest')
+      # sns.heatmap(gcn_phi, vmin=0, vmax=1)
+      # plt.show()
+
+        qc = qcomb(gcn_phi, ac, env_dim)
+
+        ac.main(1, qc)
+
+        print("Episode no.", i)
+        ac.printPolicy()
+
+
+      ac_t.main_ac(args.episodes)
+      # ac.plot_error()
+      # plt.plot(ac.regfin, color='red')
+      # plt.plot(ac_t.regfin, color='blue')
+      
+      # plt.show()
+
+      gcn_ac += np.array(ac.regfin)
+      ac_og += np.array(ac_t.regfin)
+
     
-    # plt.imshow(gcn_phi, cmap='hot', interpolation='nearest')
-    # sns.heatmap(gcn_phi, vmin=0, vmax=1)
-    # plt.show()
-
-      qc = qcomb(gcn_phi, ac, env_dim)
-
-      ac.main(1, qc)
-
-      print("Episode no.", i)
-      ac.printPolicy()
-
-
-    ac_t.main_ac(args.episodes)
-    # ac.plot_error()
-    plt.plot(ac.regfin, color='red')
-    plt.plot(ac_t.regfin, color='blue')
-    
+    plt.plot(gcn_ac/10, color='red')
+    plt.plot(ac_og/10, color='blue')
     plt.show()
+
 
     
 
