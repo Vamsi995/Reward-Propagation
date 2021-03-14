@@ -1,5 +1,5 @@
 # Reward Propagation using Graph Convolutional Networks
-The repository contains the code for running the experiments in the paper [Reward Propagation using Graph Convolutional Networks](https://arxiv.org/abs/2010.02474) The implementation is based on a few source codes: [gym-miniworld](https://github.com/maximecb/gym-miniworld), a  and Thomas Kipf's [pytorch GCN implementation](https://github.com/tkipf/pygcn).
+The repository contains the code for running the experiments in the paper [Reward Propagation using Graph Convolutional Networks](https://arxiv.org/abs/2010.02474) using the Proto Value Functions. The implementation is based on a few source codes: [gym-miniworld](https://github.com/maximecb/gym-miniworld), a  and Thomas Kipf's [pytorch GCN implementation](https://github.com/tkipf/pygcn).
 
 # Installation
 
