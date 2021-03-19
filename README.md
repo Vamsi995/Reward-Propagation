@@ -9,7 +9,6 @@ conda install pytorch torchvision -c soumith
 
 # Other requirements
 pip install -r requirements.txt
-pip install mujoco-py==2.0.2.2 #optional
 
 #Installing PyGCN
 python setup_gcn.py install
