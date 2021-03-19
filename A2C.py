@@ -190,7 +190,7 @@ class ActorCritic:
     self.regretError = []
     self.regfin = []
 
-  def main(self, num_of_ep, qc):
+  def main(self, num_of_ep, qc, gcnphi, alph):
 
 
 
@@ -214,10 +214,12 @@ class ActorCritic:
         self.parameter += self.step_size_policy * qc[a, s[0], s[1]] * self.score_fn(s,a)
         # self.parameter += self.step_size_policy * self.grid.qvalues(s,a) * self.score_fn(s,a)
 
-        td_error = r + self.df * qc[a1, s1[0], s1[1]] - qc[a, s[0], s[1]]
+        td_error1 = r + self.df * qc[a1, s1[0], s1[1]] - qc[a, s[0], s[1]]
+	td_error2 = r + self.df * qc[a1, s1[0], s1[1]] - qc[a, s[0], s[1]] + self.df * gcnphi[s1] - gcnphi[s]
         # td_error = r + self.df * self.grid.qvalues(s1,a1) - self.grid.qvalues(s,a)
+	td_comb = alph * td_error1 + (1 - alph) * td_error2
 
-        self.grid.qweights += self.step_size_qvalue * td_error * self.grid.get_features(s,a)
+        self.grid.qweights += self.step_size_qvalue * td_comb * self.grid.get_features(s,a)
 
 
         self.errors[s[0], s[1], a].append(td_error)

@@ -114,7 +114,7 @@ def qcomb(phi, ac, env_dim):
     for i in range(env_dim[0]):
 
         for j in range(env_dim[1]):
-            qc[:, i, j] = ac.find_qvalues((i,j))  - (1 - args.gcn_alpha) * phi[i,j]
+            qc[:, i, j] = ac.find_qvalues((i,j))
 
     return qc
 
@@ -167,7 +167,7 @@ def main():
 
         qc = qcomb(gcn_phi, ac, env_dim)
 
-        ac.main(1, qc)
+        ac.main(1, qc, gcn_phi, args.gcn_alpha)
 
         print("Episode no.", i)
         ac.printPolicy()
