@@ -39,7 +39,9 @@ python setup_gcn.py install
 
 ## Results
 
-
+![Reward Propagation](/images/1.png)
+![Regret Plot](/images/2.png)
+![Loss Plot](/images/3.png)
 
 
 ## Built With
